@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"testing"
 
-	. "bou.ke/monkey"
+	"github.com/agiledragon/gomonkey/v2"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -31,6 +31,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	logf "sigs.k8s.io/controller-runtime/pkg/log"
 
 	mysqlv1alpha1 "github.com/radondb/radondb-mysql-kubernetes/api/v1alpha1"
 	"github.com/radondb/radondb-mysql-kubernetes/utils"
@@ -46,13 +47,13 @@ var (
 		},
 	}
 	testCluster = MysqlCluster{
-		&mysqlCluster,
+		&mysqlCluster, logf.Log.WithName("mysqlcluster"),
 	}
 )
 
 func TestNew(t *testing.T) {
 	want := &MysqlCluster{
-		&mysqlCluster,
+		&mysqlCluster, logf.Log.WithName("mysqlcluster"),
 	}
 	assert.Equal(t, want, New(&mysqlCluster))
 }
@@ -69,7 +70,8 @@ func TestGetLabel(t *testing.T) {
 			"app.kubernetes.io/instance": "instance",
 		}
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster,
+			log:          logf.Log.WithName("mysqlcluster"),
 		}
 		want := labels.Set{
 			"mysql.radondb.com/cluster":  "sample",
@@ -88,7 +90,8 @@ func TestGetLabel(t *testing.T) {
 			"app.kubernetes.io/component": "component",
 		}
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster,
+			log:          logf.Log.WithName("mysqlcluster"),
 		}
 		want := labels.Set{
 			"mysql.radondb.com/cluster":  "sample",
@@ -107,7 +110,8 @@ func TestGetLabel(t *testing.T) {
 			"app.kubernetes.io/part-of": "part-of",
 		}
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster,
+			log:          logf.Log.WithName("mysqlcluster"),
 		}
 		want := labels.Set{
 			"mysql.radondb.com/cluster":  "sample",
@@ -137,7 +141,8 @@ func TestGetMySQLVersion(t *testing.T) {
 		testMysqlCluster := mysqlCluster
 		testMysqlCluster.Spec.MysqlVersion = "8.0"
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster,
+			log:          logf.Log.WithName("mysqlcluster"),
 		}
 		want := "8.0.25"
 		assert.Equal(t, want, testCase.GetMySQLVersion())
@@ -147,7 +152,8 @@ func TestGetMySQLVersion(t *testing.T) {
 		testMysqlCluster := mysqlCluster
 		testMysqlCluster.Spec.MysqlVersion = "5.7"
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster,
+			log:          logf.Log.WithName("mysqlcluster"),
 		}
 		want := "5.7.34"
 		assert.Equal(t, want, testCase.GetMySQLVersion())
@@ -157,7 +163,8 @@ func TestGetMySQLVersion(t *testing.T) {
 		testMysqlCluster := mysqlCluster
 		testMysqlCluster.Spec.MysqlVersion = "5.7.34"
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster,
+			log:          logf.Log.WithName("mysqlcluster"),
 		}
 		want := utils.InvalidMySQLVersion
 		assert.Equal(t, want, testCase.GetMySQLVersion())
@@ -172,7 +179,8 @@ func TestCreatePeers(t *testing.T) {
 		testMysqlCluster.ObjectMeta.Namespace = "default"
 		testMysqlCluster.Spec.Replicas = &replicas
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster,
+			log:          logf.Log.WithName("mysqlcluster"),
 		}
 		want := "sample-mysql-0.sample-mysql.default:8801,sample-mysql-1.sample-mysql.default:8801"
 		assert.Equal(t, want, testCase.CreatePeers())
@@ -183,7 +191,7 @@ func TestCreatePeers(t *testing.T) {
 		testMysqlCluster.ObjectMeta.Namespace = "default"
 		testMysqlCluster.Spec.Replicas = &replicas
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster, log: logf.Log.WithName("mysqlcluster"),
 		}
 		want := "sample-mysql-0.sample-mysql.default:8801,sample-mysql-1.sample-mysql.default:8801,sample-mysql-2.sample-mysql.default:8801"
 		assert.Equal(t, want, testCase.CreatePeers())
@@ -194,7 +202,7 @@ func TestCreatePeers(t *testing.T) {
 		testMysqlCluster.ObjectMeta.Namespace = "default"
 		testMysqlCluster.Spec.Replicas = &replicas
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster, log: logf.Log.WithName("mysqlcluster"),
 		}
 		want := ""
 		for i := 0; i < 666; i++ {
@@ -212,7 +220,7 @@ func TestCreatePeers(t *testing.T) {
 		testMysqlCluster.ObjectMeta.Namespace = "default"
 		testMysqlCluster.Spec.Replicas = &replicas
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster, log: logf.Log.WithName("mysqlcluster"),
 		}
 		want := ""
 		assert.Equal(t, want, testCase.CreatePeers())
@@ -223,7 +231,7 @@ func TestCreatePeers(t *testing.T) {
 		testMysqlCluster.ObjectMeta.Namespace = "default"
 		testMysqlCluster.Spec.Replicas = &replicas
 		testCase := MysqlCluster{
-			&testMysqlCluster,
+			MysqlCluster: &testMysqlCluster, log: logf.Log.WithName("mysqlcluster"),
 		}
 		want := ""
 		assert.Equal(t, want, testCase.CreatePeers())
@@ -234,7 +242,7 @@ func TestGetPodHostName(t *testing.T) {
 	testMysqlCluster := mysqlCluster
 	testMysqlCluster.ObjectMeta.Namespace = "default"
 	testCase := MysqlCluster{
-		&testMysqlCluster,
+		MysqlCluster: &testMysqlCluster, log: logf.Log.WithName("mysqlcluster"),
 	}
 	want0 := "sample-mysql-0.sample-mysql.default"
 	want1 := "sample-mysql-1.sample-mysql.default"
@@ -314,7 +322,7 @@ func TestEnsureVolumes(t *testing.T) {
 		testMysql := mysqlCluster
 		testMysql.Spec.Persistence.Enabled = false
 		testCase := MysqlCluster{
-			&testMysql,
+			MysqlCluster: &testMysql, log: logf.Log.WithName("mysqlcluster"),
 		}
 		want := []corev1.Volume{
 			{
@@ -333,7 +341,7 @@ func TestEnsureVolumes(t *testing.T) {
 		testMysql.Spec.Persistence.Enabled = true
 		testMysql.Spec.MysqlOpts.InitTokuDB = true
 		testCase := MysqlCluster{
-			&testMysql,
+			MysqlCluster: &testMysql, log: logf.Log.WithName("mysqlcluster"),
 		}
 		want := []corev1.Volume{
 			{
@@ -353,7 +361,7 @@ func TestEnsureVolumes(t *testing.T) {
 		testMysql := mysqlCluster
 		testMysql.Spec.Persistence.Enabled = true
 		testCase := MysqlCluster{
-			&testMysql,
+			MysqlCluster: &testMysql, log: logf.Log.WithName("mysqlcluster"),
 		}
 		assert.Equal(t, volume, testCase.EnsureVolumes())
 	}
@@ -388,7 +396,7 @@ func TestEnsureVolumeClaimTemplates(t *testing.T) {
 			},
 		}
 		testCase := MysqlCluster{
-			&testMysql,
+			&testMysql, logf.Log.WithName("mysqlcluster"),
 		}
 		want := []corev1.PersistentVolumeClaim{
 			{
@@ -408,18 +416,18 @@ func TestEnsureVolumeClaimTemplates(t *testing.T) {
 				},
 			},
 		}
-		guard := PatchInstanceMethod(reflect.TypeOf(cluster), "GetLabels", func(*MysqlCluster) labels.Set {
+		guard := gomonkey.ApplyMethod(reflect.TypeOf(cluster), "GetLabels", func(*MysqlCluster) labels.Set {
 			return nil
 		})
-		guard1 := Patch(resource.MustParse, func(_ string) resource.Quantity {
+		guard1 := gomonkey.ApplyFunc(resource.MustParse, func(_ string) resource.Quantity {
 			return resource.Quantity{}
 		})
-		guard2 := Patch(controllerutil.SetControllerReference, func(_ metav1.Object, _ metav1.Object, _ *runtime.Scheme) error {
+		guard2 := gomonkey.ApplyFunc(controllerutil.SetControllerReference, func(_ metav1.Object, _ metav1.Object, _ *runtime.Scheme) error {
 			return nil
 		})
-		defer guard.Unpatch()
-		defer guard1.Unpatch()
-		defer guard2.Unpatch()
+		defer guard.Reset()
+		defer guard1.Reset()
+		defer guard2.Reset()
 		result, err := testCase.EnsureVolumeClaimTemplates(&scheme)
 		assert.Equal(t, want, result)
 		assert.Nil(t, err)
@@ -433,12 +441,12 @@ func TestEnsureVolumeClaimTemplates(t *testing.T) {
 		testMysql.Spec.Persistence.Size = "10Gi"
 		testMysql.Spec.Persistence.StorageClass = &storageClass
 		testCase := MysqlCluster{
-			&testMysql,
+			&testMysql, logf.Log.WithName("mysqlcluster"),
 		}
-		guard := Patch(controllerutil.SetControllerReference, func(_ metav1.Object, _ metav1.Object, _ *runtime.Scheme) error {
+		guard := gomonkey.ApplyFunc(controllerutil.SetControllerReference, func(_ metav1.Object, _ metav1.Object, _ *runtime.Scheme) error {
 			return nil
 		})
-		defer guard.Unpatch()
+		defer guard.Reset()
 		result, err := testCase.EnsureVolumeClaimTemplates(&scheme)
 
 		assert.Equal(t, &storageClass, result[0].Spec.StorageClassName)
@@ -451,12 +459,12 @@ func TestEnsureVolumeClaimTemplates(t *testing.T) {
 		testMysql.Spec.Persistence.Enabled = true
 		testMysql.Spec.Persistence.Size = "10Gi"
 		testCase := MysqlCluster{
-			&testMysql,
+			&testMysql, logf.Log.WithName("mysqlcluster"),
 		}
-		guard := Patch(controllerutil.SetControllerReference, func(_ metav1.Object, _ metav1.Object, _ *runtime.Scheme) error {
+		guard := gomonkey.ApplyFunc(controllerutil.SetControllerReference, func(_ metav1.Object, _ metav1.Object, _ *runtime.Scheme) error {
 			return fmt.Errorf("test")
 		})
-		defer guard.Unpatch()
+		defer guard.Reset()
 		result, err := testCase.EnsureVolumeClaimTemplates(&scheme)
 		want := fmt.Errorf("failed setting controller reference: test")
 		assert.Nil(t, result)
@@ -521,7 +529,7 @@ func TestEnsureMysqlConf(t *testing.T) {
 	{
 		testMysqlCase := testMysql
 		testCase := MysqlCluster{
-			&testMysqlCase,
+			&testMysqlCase, logf.Log.WithName("mysqlcluster"),
 		}
 		testCase.EnsureMysqlConf()
 		wantSize = strconv.FormatUint(uint64(0.45*float64(gb)), 10)
@@ -531,15 +539,15 @@ func TestEnsureMysqlConf(t *testing.T) {
 	}
 	// cpu 1 corev1s,memory 1 gb,innodb_buffer_pool_size 600 mb
 	{
-		guard := Patch(sizeToBytes, func(s string) (uint64, error) {
+		guard := gomonkey.ApplyFunc(sizeToBytes, func(s string) (uint64, error) {
 			return uint64(600 * mb), nil
 		})
-		defer guard.Unpatch()
+		defer guard.Reset()
 
 		testMysqlCase := testMysql
 		testMysqlCase.Spec.MysqlOpts.MysqlConf["innodb_buffer_pool_size"] = strconv.FormatUint(uint64(600*mb), 10)
 		testCase := MysqlCluster{
-			&testMysqlCase,
+			&testMysqlCase, logf.Log.WithName("mysqlcluster"),
 		}
 		testCase.EnsureMysqlConf()
 		wantSize := strconv.FormatUint(uint64(600*float64(mb)), 10)
@@ -549,17 +557,17 @@ func TestEnsureMysqlConf(t *testing.T) {
 	}
 	// cpu 1 corev1s,memory 2 gb,innodb_buffer_pool_size 1.7 gb
 	{
-		guard := Patch(sizeToBytes, func(s string) (uint64, error) {
+		guard := gomonkey.ApplyFunc(sizeToBytes, func(s string) (uint64, error) {
 			return uint64(1700 * mb), nil
 		})
-		defer guard.Unpatch()
+		defer guard.Reset()
 
 		memoryCase := resource.NewQuantity(2*gb, resource.BinarySI)
 		testMysqlCase := testMysql
 		testMysqlCase.Spec.MysqlOpts.Resources.Requests["memory"] = *memoryCase
 		testMysqlCase.Spec.MysqlOpts.MysqlConf["innodb_buffer_pool_size"] = strconv.FormatUint(uint64(1.7*float64(gb)), 10)
 		testCase := MysqlCluster{
-			&testMysqlCase,
+			&testMysqlCase, logf.Log.WithName("mysqlcluster"),
 		}
 		testCase.EnsureMysqlConf()
 		wantSize := strconv.FormatUint(uint64(1.6*float64(gb)), 10)
@@ -569,16 +577,16 @@ func TestEnsureMysqlConf(t *testing.T) {
 	}
 	// cpu 1 corev1s,memory 2 gb,innodb_buffer_pool_size 1.7 gb, sizeToBytes error
 	{
-		guard := Patch(sizeToBytes, func(s string) (uint64, error) {
+		guard := gomonkey.ApplyFunc(sizeToBytes, func(s string) (uint64, error) {
 			return uint64(1700 * mb), fmt.Errorf("error")
 		})
-		defer guard.Unpatch()
+		defer guard.Reset()
 		memoryCase := resource.NewQuantity(2*gb, resource.BinarySI)
 		testMysqlCase := testMysql
 		testMysqlCase.Spec.MysqlOpts.Resources.Requests["memory"] = *memoryCase
 		testMysqlCase.Spec.MysqlOpts.MysqlConf["innodb_buffer_pool_size"] = strconv.FormatUint(uint64(1.7*float64(gb)), 10)
 		testCase := MysqlCluster{
-			&testMysqlCase,
+			&testMysqlCase, logf.Log.WithName("mysqlcluster"),
 		}
 		testCase.EnsureMysqlConf()
 		wantSize := strconv.FormatUint(uint64(1.2*float64(gb)), 10)
@@ -588,10 +596,10 @@ func TestEnsureMysqlConf(t *testing.T) {
 	}
 	// cpu 8 corev1s,memory 16 gb,innodb_buffer_pool_size 2 gb
 	{
-		guard := Patch(sizeToBytes, func(s string) (uint64, error) {
+		guard := gomonkey.ApplyFunc(sizeToBytes, func(s string) (uint64, error) {
 			return uint64(2 * gb), nil
 		})
-		defer guard.Unpatch()
+		defer guard.Reset()
 
 		memoryCase := resource.NewQuantity(16*gb, resource.BinarySI)
 		limitCpucorev1sCase := resource.NewQuantity(4, resource.DecimalSI)
@@ -599,7 +607,7 @@ func TestEnsureMysqlConf(t *testing.T) {
 		testMysqlCase.Spec.MysqlOpts.Resources.Limits["cpu"] = *limitCpucorev1sCase
 		testMysqlCase.Spec.MysqlOpts.Resources.Requests["memory"] = *memoryCase
 		testCase := MysqlCluster{
-			&testMysqlCase,
+			&testMysqlCase, logf.Log.WithName("mysqlcluster"),
 		}
 		testCase.EnsureMysqlConf()
 		wantSize := strconv.FormatUint(uint64(2*float64(gb)), 10)
@@ -650,10 +658,10 @@ func TestSizeToBytes(t *testing.T) {
 	}
 	// it will return the result of ParseUint() when the parameter without unit
 	{
-		guard := Patch(strconv.ParseUint, func(s string, base int, bitSize int) (uint64, error) {
+		guard := gomonkey.ApplyFunc(strconv.ParseUint, func(s string, base int, bitSize int) (uint64, error) {
 			return uint64(666), nil
 		})
-		defer guard.Unpatch()
+		defer guard.Reset()
 
 		testCase := "1000"
 		want := uint64(666)
@@ -663,10 +671,10 @@ func TestSizeToBytes(t *testing.T) {
 	}
 	// ParseUint error
 	{
-		guard := Patch(strconv.ParseUint, func(s string, base int, bitSize int) (uint64, error) {
+		guard := gomonkey.ApplyFunc(strconv.ParseUint, func(s string, base int, bitSize int) (uint64, error) {
 			return uint64(777), fmt.Errorf("error")
 		})
-		defer guard.Unpatch()
+		defer guard.Reset()
 
 		testCase := "1000k"
 		want := uint64(0)
@@ -679,10 +687,10 @@ func TestSizeToBytes(t *testing.T) {
 func TestGetPrefixFromEnv(t *testing.T) {
 	// Prefix is empty.
 	{
-		guard := Patch(os.Getenv, func(key string) string {
+		patch := gomonkey.ApplyFunc(os.Getenv, func(key string) string {
 			return ""
 		})
-		defer guard.Unpatch()
+		defer patch.Reset()
 
 		want := ""
 		result := GetPrefixFromEnv()
@@ -690,10 +698,10 @@ func TestGetPrefixFromEnv(t *testing.T) {
 	}
 	// Prefix is not empty.
 	{
-		guard := Patch(os.Getenv, func(key string) string {
+		patch := gomonkey.ApplyFunc(os.Getenv, func(key string) string {
 			return "docker.io"
 		})
-		defer guard.Unpatch()
+		defer patch.Reset()
 
 		want := "docker.io/"
 		result := GetPrefixFromEnv()

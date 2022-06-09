@@ -85,7 +85,8 @@ type Config struct {
 	// for mysql backup
 	// backup user and password for http endpoint
 	ClusterName string
-
+	// Job name if is backup Job
+	JobName string
 	// Backup user name to http Server
 	BackupUser string
 
@@ -134,10 +135,13 @@ type Config struct {
 func NewInitConfig() *Config {
 	// check mysql version is supported or not and then get parse mysql semver version
 	var mysqlSemVer semver.Version
+
 	if ver := getEnvValue("MYSQL_VERSION"); ver == utils.InvalidMySQLVersion {
 		panic("invalid mysql version, currently we only support 5.7 or 8.0")
 	} else {
-		mysqlSemVer, err := semver.Parse(ver)
+		var err error
+		// Do not use := here, it will alloc a new semver.Version every time.
+		mysqlSemVer, err = semver.Parse(ver)
 		if err != nil {
 			log.Info("semver get from MYSQL_VERSION is invalid", "semver: ", mysqlSemVer)
 			panic(err)
@@ -229,6 +233,7 @@ func NewReqBackupConfig() *Config {
 
 		BackupUser:     getEnvValue("BACKUP_USER"),
 		BackupPassword: getEnvValue("BACKUP_PASSWORD"),
+		JobName:        getEnvValue("JOB_NAME"),
 	}
 }
 
@@ -258,7 +263,7 @@ func (cfg *Config) XtrabackupArgs() []string {
 }
 
 // Build xbcloud arguments
-func (cfg *Config) XCloudArgs() []string {
+func (cfg *Config) XCloudArgs(backupName string) []string {
 	xcloudArgs := []string{
 		"put",
 		"--storage=S3",
@@ -267,10 +272,15 @@ func (cfg *Config) XCloudArgs() []string {
 		fmt.Sprintf("--s3-secret-key=%s", cfg.XCloudS3SecretKey),
 		fmt.Sprintf("--s3-bucket=%s", cfg.XCloudS3Bucket),
 		"--parallel=10",
-		utils.BuildBackupName(cfg.ClusterName),
+		// utils.BuildBackupName(cfg.ClusterName),
+		backupName,
 		"--insecure",
 	}
 	return xcloudArgs
+}
+
+func (cfg *Config) XBackupName() (string, string) {
+	return utils.BuildBackupName(cfg.ClusterName)
 }
 
 // buildExtraConfig build a ini file for mysql.
@@ -314,7 +324,8 @@ func (cfg *Config) buildXenonConf() []byte {
 	}
 
 	hostName := fmt.Sprintf("%s.%s.%s", cfg.HostName, cfg.ServiceName, cfg.NameSpace)
-
+	// Because go-sql-driver will translate localhost to 127.0.0.1 or ::1, but never set the hostname
+	// so the host is set to "127.0.0.1" in config file.
 	str := fmt.Sprintf(`{
 		"log": {
 			"level": "INFO"
@@ -337,7 +348,7 @@ func (cfg *Config) buildXenonConf() []byte {
 			"admin": "root",
 			"ping-timeout": %d,
 			"passwd": "%s",
-			"host": "localhost",
+			"host": "127.0.0.1",
 			"version": "%s",
 			"master-sysvars": "%s",
 			"slave-sysvars": "%s",
